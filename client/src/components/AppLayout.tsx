@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Activity, BarChart3, Bell, CalendarDays, ChevronDown, ClipboardList,
   FileText, LayoutDashboard, ListOrdered, LogOut, Menu, Package, Pill, Receipt,
@@ -12,13 +12,13 @@ import { Avatar } from '@/components/ui/Layout';
 import { Button } from '@/components/ui/Button';
 import { PERMISSIONS } from '@/lib/permissions';
 
-interface NavItem { to: string; label: string; icon: React.ReactNode; permission?: string; roles?: string[] }
+interface NavItem { to: string; label: string; icon: React.ReactNode; permission?: string; roles?: string[]; mobile?: boolean }
 
 const NAV: NavItem[] = [
-  { to: '/', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
-  { to: '/appointments', label: 'Appointments', icon: <CalendarDays className="h-4 w-4" />, permission: PERMISSIONS.APPOINTMENT_VIEW },
-  { to: '/queue', label: 'Queue', icon: <ListOrdered className="h-4 w-4" />, permission: PERMISSIONS.QUEUE_VIEW },
-  { to: '/patients', label: 'Patients', icon: <Users className="h-4 w-4" />, permission: PERMISSIONS.PATIENT_VIEW },
+  { to: '/', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" />, mobile: true },
+  { to: '/appointments', label: 'Appointments', icon: <CalendarDays className="h-4 w-4" />, permission: PERMISSIONS.APPOINTMENT_VIEW, mobile: true },
+  { to: '/queue', label: 'Queue', icon: <ListOrdered className="h-4 w-4" />, permission: PERMISSIONS.QUEUE_VIEW, mobile: true },
+  { to: '/patients', label: 'Patients', icon: <Users className="h-4 w-4" />, permission: PERMISSIONS.PATIENT_VIEW, mobile: true },
   { to: '/consultations', label: 'Consultations', icon: <Stethoscope className="h-4 w-4" />, permission: PERMISSIONS.CONSULTATION_VIEW },
   { to: '/prescriptions', label: 'Prescriptions', icon: <ClipboardList className="h-4 w-4" />, permission: PERMISSIONS.PRESCRIPTION_VIEW },
   { to: '/follow-ups', label: 'Follow-ups', icon: <Activity className="h-4 w-4" />, permission: PERMISSIONS.CONSULTATION_VIEW },
@@ -32,20 +32,21 @@ const NAV: NavItem[] = [
 ];
 
 const PATIENT_NAV: NavItem[] = [
-  { to: '/me', label: 'Home', icon: <LayoutDashboard className="h-4 w-4" /> },
-  { to: '/me/appointments', label: 'Appointments', icon: <CalendarDays className="h-4 w-4" /> },
-  { to: '/me/queue', label: 'My token', icon: <ListOrdered className="h-4 w-4" /> },
+  { to: '/me', label: 'Home', icon: <LayoutDashboard className="h-4 w-4" />, mobile: true },
+  { to: '/me/appointments', label: 'Visits', icon: <CalendarDays className="h-4 w-4" />, mobile: true },
+  { to: '/me/queue', label: 'Token', icon: <ListOrdered className="h-4 w-4" />, mobile: true },
+  { to: '/me/prescriptions', label: 'Rx', icon: <ClipboardList className="h-4 w-4" />, mobile: true },
+  { to: '/me/profile', label: 'Profile', icon: <Users className="h-4 w-4" />, mobile: true },
   { to: '/me/visits', label: 'My visits', icon: <Stethoscope className="h-4 w-4" /> },
-  { to: '/me/prescriptions', label: 'Prescriptions', icon: <ClipboardList className="h-4 w-4" /> },
   { to: '/me/documents', label: 'Reports', icon: <FileText className="h-4 w-4" /> },
   { to: '/me/payments', label: 'Payments', icon: <Receipt className="h-4 w-4" /> },
   { to: '/me/notifications', label: 'Notifications', icon: <Bell className="h-4 w-4" /> },
-  { to: '/me/profile', label: 'Profile', icon: <Users className="h-4 w-4" /> },
 ];
 
 export function AppLayout() {
   const { user, clinics, activeClinic, setActiveClinicId, can, hasRole, logout } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
@@ -56,6 +57,10 @@ export function AppLayout() {
     if (i.permission && !can(i.permission)) return false;
     return true;
   });
+  const mobileItems = items.filter((i) => i.mobile);
+  // The prescription editor has its own bottom action bar, so hide the tab bar
+  // there to avoid stacking two fixed bars.
+  const hideMobileTabs = /^\/prescriptions\/[^/]+\/edit$/.test(pathname);
 
   async function handleLogout() {
     await logout();
@@ -180,12 +185,51 @@ export function AppLayout() {
           </div>
         </header>
 
-        <main className="scroll-thin flex-1 overflow-y-auto p-4 sm:p-6">
+        <main className="scroll-thin flex-1 overflow-y-auto p-4 pb-24 sm:p-6 lg:pb-6">
           <div className="mx-auto max-w-7xl">
             <Outlet />
           </div>
         </main>
       </div>
+
+      {/* Mobile bottom tab bar — primary destinations only. */}
+      {!hideMobileTabs && (
+      <nav
+        aria-label="Primary"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-ink-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
+      >
+        <div className="mx-auto flex max-w-lg items-stretch">
+          {mobileItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === '/' || item.to === '/me'}
+              className={({ isActive }) => cn(
+                'flex flex-1 flex-col items-center gap-0.5 px-1 py-2 text-[11px] font-medium transition-colors',
+                isActive ? 'text-brand-700' : 'text-ink-500',
+              )}
+            >
+              {({ isActive }) => (
+                <>
+                  <span className={cn('flex h-7 w-12 items-center justify-center rounded-full', isActive && 'bg-brand-50')}>
+                    {item.icon}
+                  </span>
+                  <span className="truncate">{item.label}</span>
+                </>
+              )}
+            </NavLink>
+          ))}
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="flex flex-1 flex-col items-center gap-0.5 px-1 py-2 text-[11px] font-medium text-ink-500"
+            aria-label="More"
+          >
+            <span className="flex h-7 w-12 items-center justify-center rounded-full"><Menu className="h-4 w-4" /></span>
+            <span>More</span>
+          </button>
+        </div>
+      </nav>
+      )}
     </div>
   );
 }
