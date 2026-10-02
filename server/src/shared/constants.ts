@@ -1,0 +1,181 @@
+/**
+ * Domain status constants. These mirror the string columns in the Prisma schema
+ * (SQLite has no native enums) and are the single source of truth for allowed
+ * state transitions on the server and in the client.
+ */
+
+export const PRESCRIPTION_STATUS = {
+  DRAFT: 'DRAFT',
+  REVIEW: 'REVIEW',
+  ISSUED: 'ISSUED',
+  SHARED: 'SHARED',
+  VIEWED: 'VIEWED',
+  CORRECTED: 'CORRECTED',
+  CANCELLED: 'CANCELLED',
+} as const;
+export type PrescriptionStatus = (typeof PRESCRIPTION_STATUS)[keyof typeof PRESCRIPTION_STATUS];
+
+export const PRESCRIPTION_VERSION_STATUS = {
+  DRAFT: 'DRAFT',
+  REVIEW: 'REVIEW',
+  ISSUED: 'ISSUED',
+  SUPERSEDED: 'SUPERSEDED',
+  CANCELLED: 'CANCELLED',
+} as const;
+export type PrescriptionVersionStatus =
+  (typeof PRESCRIPTION_VERSION_STATUS)[keyof typeof PRESCRIPTION_VERSION_STATUS];
+
+export const PHARMACY_PRESCRIPTION_STATUS = {
+  RECEIVED: 'RECEIVED',
+  UNDER_REVIEW: 'UNDER_REVIEW',
+  ACCEPTED: 'ACCEPTED',
+  CLARIFICATION_REQUIRED: 'CLARIFICATION_REQUIRED',
+  PROCESSING: 'PROCESSING',
+  READY: 'READY',
+  COMPLETED: 'COMPLETED',
+  REJECTED: 'REJECTED',
+} as const;
+export type PharmacyPrescriptionStatus =
+  (typeof PHARMACY_PRESCRIPTION_STATUS)[keyof typeof PHARMACY_PRESCRIPTION_STATUS];
+
+/** Allowed pharmacist-driven transitions for a shared prescription. */
+export const PHARMACY_TRANSITIONS: Record<PharmacyPrescriptionStatus, PharmacyPrescriptionStatus[]> = {
+  RECEIVED: ['UNDER_REVIEW', 'ACCEPTED', 'CLARIFICATION_REQUIRED', 'REJECTED'],
+  UNDER_REVIEW: ['ACCEPTED', 'CLARIFICATION_REQUIRED', 'REJECTED'],
+  CLARIFICATION_REQUIRED: ['UNDER_REVIEW', 'ACCEPTED', 'REJECTED'],
+  ACCEPTED: ['PROCESSING', 'REJECTED'],
+  PROCESSING: ['READY', 'REJECTED'],
+  READY: ['COMPLETED'],
+  COMPLETED: [],
+  REJECTED: [],
+};
+
+export const APPOINTMENT_STATUS = {
+  BOOKED: 'BOOKED',
+  CONFIRMED: 'CONFIRMED',
+  CHECKED_IN: 'CHECKED_IN',
+  IN_CONSULTATION: 'IN_CONSULTATION',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED',
+  NO_SHOW: 'NO_SHOW',
+  RESCHEDULED: 'RESCHEDULED',
+} as const;
+export type AppointmentStatus = (typeof APPOINTMENT_STATUS)[keyof typeof APPOINTMENT_STATUS];
+
+export const APPOINTMENT_TYPE = {
+  CONSULTATION: 'CONSULTATION',
+  FOLLOW_UP: 'FOLLOW_UP',
+  PROCEDURE: 'PROCEDURE',
+  OTHER: 'OTHER',
+} as const;
+export type AppointmentType = (typeof APPOINTMENT_TYPE)[keyof typeof APPOINTMENT_TYPE];
+
+export const QUEUE_STATUS = {
+  WAITING: 'WAITING',
+  CONSULTING: 'CONSULTING',
+  COMPLETED: 'COMPLETED',
+  SKIPPED: 'SKIPPED',
+  CANCELLED: 'CANCELLED',
+  RECALLED: 'RECALLED',
+} as const;
+export type QueueStatus = (typeof QUEUE_STATUS)[keyof typeof QUEUE_STATUS];
+
+export const INVOICE_STATUS = {
+  UNPAID: 'UNPAID',
+  PARTIALLY_PAID: 'PARTIALLY_PAID',
+  PAID: 'PAID',
+  REFUNDED: 'REFUNDED',
+  CANCELLED: 'CANCELLED',
+} as const;
+export type InvoiceStatus = (typeof INVOICE_STATUS)[keyof typeof INVOICE_STATUS];
+
+export const PAYMENT_METHOD = {
+  CASH: 'CASH',
+  UPI: 'UPI',
+  CARD: 'CARD',
+  ONLINE: 'ONLINE',
+  OTHER: 'OTHER',
+} as const;
+export type PaymentMethod = (typeof PAYMENT_METHOD)[keyof typeof PAYMENT_METHOD];
+
+export const NOTIFICATION_TYPE = {
+  APPOINTMENT_BOOKED: 'APPOINTMENT_BOOKED',
+  APPOINTMENT_CONFIRMED: 'APPOINTMENT_CONFIRMED',
+  APPOINTMENT_REMINDER: 'APPOINTMENT_REMINDER',
+  APPOINTMENT_CHANGED: 'APPOINTMENT_CHANGED',
+  APPOINTMENT_CANCELLED: 'APPOINTMENT_CANCELLED',
+  TOKEN_CALLED: 'TOKEN_CALLED',
+  PRESCRIPTION_ISSUED: 'PRESCRIPTION_ISSUED',
+  PRESCRIPTION_SHARED: 'PRESCRIPTION_SHARED',
+  PHARMACY_PRESCRIPTION_RECEIVED: 'PHARMACY_PRESCRIPTION_RECEIVED',
+  PHARMACY_CLARIFICATION: 'PHARMACY_CLARIFICATION',
+  MEDICINE_READY: 'MEDICINE_READY',
+  PAYMENT_RECEIPT: 'PAYMENT_RECEIPT',
+  FOLLOW_UP_REMINDER: 'FOLLOW_UP_REMINDER',
+  CLINIC_ANNOUNCEMENT: 'CLINIC_ANNOUNCEMENT',
+} as const;
+export type NotificationType = (typeof NOTIFICATION_TYPE)[keyof typeof NOTIFICATION_TYPE];
+
+export const NOTIFICATION_CHANNEL = {
+  IN_APP: 'IN_APP',
+  PUSH: 'PUSH',
+  EMAIL: 'EMAIL',
+  WHATSAPP: 'WHATSAPP',
+  SMS: 'SMS',
+} as const;
+export type NotificationChannel = (typeof NOTIFICATION_CHANNEL)[keyof typeof NOTIFICATION_CHANNEL];
+
+export const AUDIT_ACTION = {
+  PATIENT_CREATED: 'PATIENT_CREATED',
+  PATIENT_UPDATED: 'PATIENT_UPDATED',
+  CONSULTATION_CREATED: 'CONSULTATION_CREATED',
+  PRESCRIPTION_CREATED: 'PRESCRIPTION_CREATED',
+  PRESCRIPTION_ISSUED: 'PRESCRIPTION_ISSUED',
+  PRESCRIPTION_CORRECTED: 'PRESCRIPTION_CORRECTED',
+  PRESCRIPTION_VIEWED: 'PRESCRIPTION_VIEWED',
+  PRESCRIPTION_SHARED: 'PRESCRIPTION_SHARED',
+  PHARMACY_ACCESSED_PRESCRIPTION: 'PHARMACY_ACCESSED_PRESCRIPTION',
+  PAYMENT_CREATED: 'PAYMENT_CREATED',
+  PAYMENT_REFUNDED: 'PAYMENT_REFUNDED',
+  USER_PERMISSION_CHANGED: 'USER_PERMISSION_CHANGED',
+  DOCUMENT_UPLOADED: 'DOCUMENT_UPLOADED',
+  DOCUMENT_VIEWED: 'DOCUMENT_VIEWED',
+  LOGIN: 'LOGIN',
+  LOGOUT: 'LOGOUT',
+  MEDICAL_SHOP_TOGGLED: 'MEDICAL_SHOP_TOGGLED',
+  CONSENT_GRANTED: 'CONSENT_GRANTED',
+  CONSENT_REVOKED: 'CONSENT_REVOKED',
+} as const;
+export type AuditAction = (typeof AUDIT_ACTION)[keyof typeof AUDIT_ACTION];
+
+export const GENDER = ['MALE', 'FEMALE', 'OTHER', 'UNDISCLOSED'] as const;
+export const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as const;
+
+export const MEDICINE_FORM = ['TABLET', 'CAPSULE', 'SYRUP', 'SUSPENSION', 'INJECTION', 'CREAM', 'OINTMENT', 'DROPS', 'INHALER', 'POWDER', 'OTHER'] as const;
+export const MEDICINE_ROUTE = ['ORAL', 'TOPICAL', 'IV', 'IM', 'SC', 'INHALATION', 'NASAL', 'OCULAR', 'OTIC', 'RECTAL', 'OTHER'] as const;
+export const FOOD_RELATION = ['BEFORE_FOOD', 'AFTER_FOOD', 'WITH_FOOD', 'EMPTY_STOMACH', 'NA'] as const;
+
+export const DOCUMENT_CATEGORY = ['LAB_REPORT', 'SCAN', 'PRESCRIPTION', 'DISCHARGE', 'CERTIFICATE', 'REFERRAL', 'OTHER'] as const;
+export const INVESTIGATION_TYPE = ['LAB', 'SCAN', 'OTHER', 'REFERRAL'] as const;
+export const SERVICE_CATEGORY = ['CONSULTATION', 'FOLLOW_UP', 'PROCEDURE', 'TEST', 'OTHER'] as const;
+
+export const RELATION = ['SPOUSE', 'CHILD', 'PARENT', 'SIBLING', 'OTHER'] as const;
+
+export const CLINIC_SETTING_KEYS = {
+  MEDICAL_SHOP_ENABLED: 'medical_shop_enabled',
+  CUSTOM_VITALS: 'custom_vitals',
+  DEFAULT_FOLLOW_UP_DAYS: 'default_follow_up_days',
+  PRESCRIPTION_FOOTER: 'prescription_footer',
+  DATA_RETENTION_DAYS: 'data_retention_days',
+} as const;
+
+// String-array mirrors of the status objects, for use with z.enum([...]).
+export const APPOINTMENT_STATUSES = Object.values(APPOINTMENT_STATUS) as [string, ...string[]];
+export const APPOINTMENT_TYPES = Object.values(APPOINTMENT_TYPE) as [string, ...string[]];
+export const QUEUE_STATUSES = Object.values(QUEUE_STATUS) as [string, ...string[]];
+export const INVOICE_STATUSES = Object.values(INVOICE_STATUS) as [string, ...string[]];
+export const PAYMENT_METHODS = Object.values(PAYMENT_METHOD) as [string, ...string[]];
+export const PRESCRIPTION_STATUSES = Object.values(PRESCRIPTION_STATUS) as [string, ...string[]];
+export const PHARMACY_PRESCRIPTION_STATUSES = Object.values(PHARMACY_PRESCRIPTION_STATUS) as [string, ...string[]];
+export const NOTIFICATION_TYPES = Object.values(NOTIFICATION_TYPE) as [string, ...string[]];
+export const NOTIFICATION_CHANNELS = Object.values(NOTIFICATION_CHANNEL) as [string, ...string[]];
