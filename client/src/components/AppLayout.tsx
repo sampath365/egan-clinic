@@ -34,10 +34,12 @@ const NAV: NavItem[] = [
 const PATIENT_NAV: NavItem[] = [
   { to: '/me', label: 'Home', icon: <LayoutDashboard className="h-4 w-4" /> },
   { to: '/me/appointments', label: 'Appointments', icon: <CalendarDays className="h-4 w-4" /> },
+  { to: '/me/queue', label: 'My token', icon: <ListOrdered className="h-4 w-4" /> },
   { to: '/me/visits', label: 'My visits', icon: <Stethoscope className="h-4 w-4" /> },
   { to: '/me/prescriptions', label: 'Prescriptions', icon: <ClipboardList className="h-4 w-4" /> },
   { to: '/me/documents', label: 'Reports', icon: <FileText className="h-4 w-4" /> },
   { to: '/me/payments', label: 'Payments', icon: <Receipt className="h-4 w-4" /> },
+  { to: '/me/notifications', label: 'Notifications', icon: <Bell className="h-4 w-4" /> },
   { to: '/me/profile', label: 'Profile', icon: <Users className="h-4 w-4" /> },
 ];
 

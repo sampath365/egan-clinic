@@ -48,7 +48,14 @@ export function PrescriptionEditorPage() {
   const [voice, setVoice] = useState('');
   const [followUpDate, setFollowUpDate] = useState('');
   const [medicines, setMedicines] = useState<PrescriptionMedicine[]>([]);
+  const [attachments, setAttachments] = useState<Array<{ id: string; title: string; category: string }>>([]);
   const [initialised, setInitialised] = useState(false);
+
+  const { data: patientDocs } = useQuery({
+    queryKey: ['patient-docs-for-rx', rx?.patientId],
+    queryFn: () => api.get<{ documents: Array<{ id: string; title: string; category: string; createdAt: string }> }>('/documents', { patientId: rx!.patientId }),
+    enabled: Boolean(rx?.patientId),
+  });
 
   // Hydrate the form once the prescription loads.
   if (rx && !initialised) {
@@ -59,6 +66,9 @@ export function PrescriptionEditorPage() {
     setVoice(v?.voiceTranscript ?? '');
     setFollowUpDate(v?.followUpDate ? v.followUpDate.slice(0, 10) : '');
     setMedicines(v?.medicines?.length ? v.medicines.map((m) => ({ ...m })) : []);
+    setAttachments(
+      (v?.attachments ?? []).map((a) => ({ id: a.medicalDocument.id, title: a.medicalDocument.title, category: a.medicalDocument.category })),
+    );
     setInitialised(true);
   }
 
@@ -71,6 +81,7 @@ export function PrescriptionEditorPage() {
         voiceTranscript: voice || null,
         followUpDate: followUpDate ? new Date(followUpDate).toISOString() : null,
         medicines: medicines.filter((m) => m.name.trim()).map((m, i) => ({ ...m, sortOrder: i })),
+        attachmentDocumentIds: attachments.map((a) => a.id),
         status: opts.status,
       };
       return api.put(`/prescriptions/${id}/content`, payload);
@@ -251,8 +262,48 @@ export function PrescriptionEditorPage() {
               <li className="flex justify-between"><span>Medicines</span><span className="font-medium">{medicines.filter((m) => m.name.trim()).length}</span></li>
               <li className="flex justify-between"><span>Handwriting</span><span className="font-medium">{rx.versions[0]?.inkStrokesJson ? 'Saved' : 'None'}</span></li>
               <li className="flex justify-between"><span>Voice transcript</span><span className="font-medium">{voice.trim() ? 'Present' : 'None'}</span></li>
+              <li className="flex justify-between"><span>Attachments</span><span className="font-medium">{attachments.length}</span></li>
             </ul>
             <p className="hint mt-3">Saving keeps this as a draft. Nothing is issued until you sign.</p>
+          </div>
+
+          <div className="card card-pad">
+            <h2 className="section-title mb-2">Attach documents</h2>
+            <p className="hint mb-2">Combine uploaded reports or scanned documents into this prescription.</p>
+            {attachments.length > 0 && (
+              <ul className="mb-3 space-y-1.5">
+                {attachments.map((a) => (
+                  <li key={a.id} className="flex items-center justify-between gap-2 rounded-lg bg-ink-50 px-2.5 py-2 text-sm">
+                    <span className="truncate text-ink-800">{a.title}</span>
+                    <button
+                      onClick={() => setAttachments((prev) => prev.filter((x) => x.id !== a.id))}
+                      className="text-ink-400 hover:text-red-600"
+                      aria-label={`Remove ${a.title}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <label className="label">Add from patient documents</label>
+            <Select
+              value=""
+              onChange={(e) => {
+                const doc = patientDocs?.documents.find((d) => d.id === e.target.value);
+                if (doc && !attachments.some((a) => a.id === doc.id)) {
+                  setAttachments((prev) => [...prev, { id: doc.id, title: doc.title, category: doc.category }]);
+                }
+              }}
+            >
+              <option value="">Select a document…</option>
+              {patientDocs?.documents
+                .filter((d) => !attachments.some((a) => a.id === d.id))
+                .map((d) => <option key={d.id} value={d.id}>{d.title} ({humanize(d.category)})</option>)}
+            </Select>
+            {(!patientDocs || patientDocs.documents.length === 0) && (
+              <p className="hint mt-2">No documents uploaded for this patient yet. Upload them from the Documents page.</p>
+            )}
           </div>
         </div>
       </div>

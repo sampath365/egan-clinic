@@ -183,6 +183,9 @@ export const ROLE_PERMISSIONS: Record<RoleName, PermissionCode[]> = {
     // assertPrescriptionAccess limits this to their own records and any family
     // records explicitly shared with them.
     P.PRESCRIPTION_SHARE,
+    // Patients may see their own token. The queue route filters to their own
+    // patientIds and the position endpoint calls assertPatientAccess.
+    P.QUEUE_VIEW,
     P.NOTIFICATION_VIEW,
   ],
 };

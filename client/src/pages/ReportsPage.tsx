@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { formatCurrency, formatDate, humanize } from '@/lib/utils';
 import { PageHeader, StatCard, EmptyState } from '@/components/ui/Layout';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Field, Input } from '@/components/ui/Field';
 import { InlineSpinner } from '@/components/ui/Spinner';
 import type { PharmacyPrescription } from '@/types';
@@ -30,6 +31,9 @@ export function ReportsPage() {
   const { data: doctors } = useQuery({ queryKey: ['report-doctors', params], queryFn: () => api.get<{ doctors: Array<{ id: string; name: string; appointments: number; consultations: number; prescriptions: number }> }>('/reports/doctors', params), enabled: Boolean(clinicId) });
   const { data: pharmacy } = useQuery({ queryKey: ['report-pharmacy', params], queryFn: () => api.get<{ enabled: boolean; items: PharmacyPrescription[] }>('/reports/pharmacy-prescriptions', params), enabled: Boolean(clinicId) && Boolean(activeClinic?.medicalShopEnabled) });
   const { data: followUps } = useQuery({ queryKey: ['report-followups', params], queryFn: () => api.get<{ byStatus: Array<{ status: string; count: number }> }>('/reports/follow-ups', params), enabled: Boolean(clinicId) });
+  const { data: consultations } = useQuery({ queryKey: ['report-consultations', params], queryFn: () => api.get<{ total: number; completed: number; withDiagnosis: number; byStatus: Array<{ status: string; count: number }> }>('/reports/consultations', params), enabled: Boolean(clinicId) });
+  const { data: outstanding } = useQuery({ queryKey: ['report-outstanding', clinicId], queryFn: () => api.get<{ items: Array<{ id: string; invoiceNo: string; balance: number; patient?: { name: string; patientCode: string } }>; total: number; count: number }>('/reports/outstanding-payments', { clinicId }), enabled: Boolean(clinicId) });
+  const { data: cancelled } = useQuery({ queryKey: ['report-cancelled', params], queryFn: () => api.get<{ items: Array<{ id: string; scheduledAt: string; status: string; patient?: { name: string }; doctor?: { name: string } }> }>('/reports/cancelled-appointments', params), enabled: Boolean(clinicId) });
 
   if (isLoading) return <InlineSpinner label="Building reports…" />;
 
@@ -160,6 +164,53 @@ export function ReportsPage() {
                 </li>
               ))}
             </ul>
+          )}
+        </section>
+
+        <section className="card card-pad">
+          <h2 className="section-title mb-3">Consultation report</h2>
+          <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
+            <div><p className="hint">Total</p><p className="text-lg font-semibold text-ink-900">{consultations?.total ?? 0}</p></div>
+            <div><p className="hint">Completed</p><p className="text-lg font-semibold text-ink-900">{consultations?.completed ?? 0}</p></div>
+            <div><p className="hint">With diagnosis</p><p className="text-lg font-semibold text-ink-900">{consultations?.withDiagnosis ?? 0}</p></div>
+          </div>
+        </section>
+
+        <section className="card card-pad">
+          <h2 className="section-title mb-3">Outstanding payments</h2>
+          <p className="text-sm text-ink-600">Total due: <span className="font-semibold text-ink-900">{formatCurrency(outstanding?.total ?? 0, currency)}</span> across {outstanding?.count ?? 0} invoice(s).</p>
+          {outstanding?.items.length ? (
+            <ul className="mt-3 divide-y divide-ink-100">
+              {outstanding.items.slice(0, 8).map((i) => (
+                <li key={i.id} className="flex items-center justify-between py-2 text-sm">
+                  <span>{i.patient?.name} <span className="hint">{i.invoiceNo}</span></span>
+                  <span className="font-medium text-amber-700">{formatCurrency(i.balance, currency)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : <p className="mt-2 text-sm text-ink-500">Nothing outstanding.</p>}
+        </section>
+
+        <section className="card card-pad lg:col-span-2">
+          <h2 className="section-title mb-3">Cancelled & no-show appointments</h2>
+          {!cancelled?.items.length ? <p className="text-sm text-ink-500">No cancellations in this range.</p> : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-left text-xs font-semibold uppercase tracking-wide text-ink-500">
+                  <tr><th className="py-2">When</th><th className="py-2">Patient</th><th className="py-2">Doctor</th><th className="py-2">Status</th></tr>
+                </thead>
+                <tbody className="divide-y divide-ink-100">
+                  {cancelled.items.slice(0, 20).map((a) => (
+                    <tr key={a.id}>
+                      <td className="py-2.5 text-ink-700">{formatDate(a.scheduledAt)}</td>
+                      <td className="py-2.5 text-ink-800">{a.patient?.name}</td>
+                      <td className="py-2.5 text-ink-700">{a.doctor?.name}</td>
+                      <td className="py-2.5"><StatusBadge status={a.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
       </div>

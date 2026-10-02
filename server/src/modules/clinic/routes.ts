@@ -9,6 +9,7 @@ import { PERMISSIONS, ROLES } from '../../shared/permissions.js';
 import { requirePermission } from '../../plugins/auth.js';
 import { assertClinicAccess } from '../../shared/access.js';
 import { getClinicSettings, setClinicSetting } from './service.js';
+import { writeFileBuffer } from '../prescriptions/service.js';
 
 const timingsSchema = z.array(
   z.object({
@@ -168,6 +169,25 @@ export async function clinicRoutes(app: FastifyInstance) {
     }
 
     return reply.send({ settings: await getClinicSettings(id) });
+  });
+
+  // --- Clinic logo upload (served publicly for prescriptions) ---
+  app.post('/:id/logo', { preHandler: [app.authenticate, requirePermission(PERMISSIONS.CLINIC_MANAGE)] }, async (req, reply) => {
+    const { id } = parseParams(req, idParamSchema);
+    assertClinicAccess(req.auth, id);
+    const data = await req.file();
+    if (!data) throw AppError.badRequest('No file was uploaded');
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(data.mimetype)) {
+      throw AppError.badRequest('Logo must be a PNG, JPEG or WebP image');
+    }
+    const buffer = await data.toBuffer();
+    if (buffer.length > 3 * 1024 * 1024) throw AppError.badRequest('Logo exceeds the 3 MB limit');
+
+    const ext = data.mimetype === 'image/png' ? 'png' : data.mimetype === 'image/webp' ? 'webp' : 'jpg';
+    const relPath = `clinics/${id}/logo-${Date.now()}.${ext}`;
+    await writeFileBuffer(relPath, buffer);
+    const clinic = await prisma.clinic.update({ where: { id }, data: { logoUrl: relPath } });
+    return reply.code(201).send({ path: relPath, clinic });
   });
 
   // --- Clinic services (billable items) ---

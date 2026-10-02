@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { HeartPulse, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ApiError } from '@/lib/api';
@@ -97,6 +97,10 @@ export function LoginPage() {
             {error && <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
             <Button type="submit" size="lg" className="w-full" loading={busy}>Sign in</Button>
           </form>
+
+          <p className="mt-4 text-center text-sm text-ink-500">
+            New to EGAN Clinic? <Link to="/register" className="font-medium text-brand-700 hover:underline">Create an account</Link>
+          </p>
 
           <div className="mt-8">
             <p className="section-title">Demo accounts</p>

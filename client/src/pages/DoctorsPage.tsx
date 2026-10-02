@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CalendarOff, Plus, Save, Stethoscope } from 'lucide-react';
+import { CalendarOff, PenLine, Plus, Save, Stethoscope } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, ApiError } from '@/lib/api';
 import { formatDate, formatCurrency } from '@/lib/utils';
@@ -19,6 +19,7 @@ export function DoctorsPage() {
   const [editing, setEditing] = useState<Doctor | null>(null);
   const [creating, setCreating] = useState(false);
   const [leaveFor, setLeaveFor] = useState<Doctor | null>(null);
+  const [signatureFor, setSignatureFor] = useState<Doctor | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['doctors', clinicId],
@@ -56,6 +57,11 @@ export function DoctorsPage() {
               <div className="mt-3 flex flex-wrap gap-1.5">
                 <Button size="sm" variant="secondary" onClick={() => setEditing(d)}>Edit profile</Button>
                 <Button size="sm" variant="ghost" onClick={() => setLeaveFor(d)}><CalendarOff className="h-3.5 w-3.5" /> Leave</Button>
+                <Button size="sm" variant="ghost" onClick={() => setSignatureFor(d)}><PenLine className="h-3.5 w-3.5" /> Signature</Button>
+              </div>
+              <div className="mt-2 flex items-center gap-2 text-xs text-ink-500">
+                <span className={d.digitalSignatureUrl ? 'text-emerald-600' : ''}>{d.digitalSignatureUrl ? '✓ Signature on file' : 'No signature'}</span>
+                <span className={d.digitalStampUrl ? 'text-emerald-600' : ''}>{d.digitalStampUrl ? '✓ Stamp on file' : 'No stamp'}</span>
               </div>
             </div>
           ))}
@@ -72,7 +78,66 @@ export function DoctorsPage() {
       )}
 
       {leaveFor && <LeaveModal doctor={leaveFor} onClose={() => setLeaveFor(null)} onDone={() => { void qc.invalidateQueries({ queryKey: ['doctors'] }); setLeaveFor(null); }} />}
+      {signatureFor && <SignatureModal doctor={signatureFor} onClose={() => setSignatureFor(null)} onDone={() => { void qc.invalidateQueries({ queryKey: ['doctors'] }); setSignatureFor(null); }} />}
     </div>
+  );
+}
+
+function SignatureModal({ doctor, onClose, onDone }: { doctor: Doctor; onClose: () => void; onDone: () => void }) {
+  const toast = useToast();
+  const [busy, setBusy] = useState<'signature' | 'stamp' | null>(null);
+
+  async function upload(kind: 'signature' | 'stamp', file: File) {
+    setBusy(kind);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      form.append('kind', kind);
+      await api.post(`/doctors/${doctor.id}/signature`, form);
+      toast.success(kind === 'stamp' ? 'Stamp uploaded' : 'Signature uploaded', 'It will appear on issued prescriptions.');
+      onDone();
+    } catch (e) {
+      toast.error('Could not upload image', e instanceof ApiError ? e.message : undefined);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <Modal open onClose={onClose} title={`Signature & stamp — ${doctor.name}`} size="md" footer={<Button variant="secondary" onClick={onClose}>Done</Button>}>
+      <div className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-lg border border-ink-200 p-3 text-center">
+            <p className="mb-2 text-sm font-medium text-ink-800">Digital signature</p>
+            {doctor.digitalSignatureUrl ? (
+              <img src={`/api/assets/doctor-asset?doctorId=${doctor.id}&kind=signature`} alt="Signature" className="mx-auto h-16 object-contain" />
+            ) : (
+              <p className="hint py-6">Not uploaded</p>
+            )}
+            <label className="mt-2 inline-flex cursor-pointer text-sm font-medium text-brand-700 hover:underline">
+              <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" disabled={busy !== null}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload('signature', f); }} />
+              {busy === 'signature' ? 'Uploading…' : doctor.digitalSignatureUrl ? 'Replace' : 'Upload signature'}
+            </label>
+          </div>
+
+          <div className="rounded-lg border border-ink-200 p-3 text-center">
+            <p className="mb-2 text-sm font-medium text-ink-800">Digital stamp</p>
+            {doctor.digitalStampUrl ? (
+              <img src={`/api/assets/doctor-asset?doctorId=${doctor.id}&kind=stamp`} alt="Stamp" className="mx-auto h-16 object-contain" />
+            ) : (
+              <p className="hint py-6">Not uploaded</p>
+            )}
+            <label className="mt-2 inline-flex cursor-pointer text-sm font-medium text-brand-700 hover:underline">
+              <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" disabled={busy !== null}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload('stamp', f); }} />
+              {busy === 'stamp' ? 'Uploading…' : doctor.digitalStampUrl ? 'Replace' : 'Upload stamp'}
+            </label>
+          </div>
+        </div>
+        <p className="hint">Use a transparent PNG for the best result. Images appear on issued prescription PDFs.</p>
+      </div>
+    </Modal>
   );
 }
 

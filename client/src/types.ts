@@ -32,7 +32,9 @@ export interface Doctor {
   id: string; clinicId: string; userId?: string | null; name: string; photoUrl?: string | null;
   specialization?: string | null; qualification?: string | null; registrationNo?: string | null;
   phone?: string | null; email?: string | null; consultationFee: number; followUpFee: number;
-  timings?: string | null; availableDays?: string | null; prescriptionHeader?: string | null;
+  timings?: string | null; availableDays?: string | null;
+  digitalSignatureUrl?: string | null; digitalStampUrl?: string | null;
+  prescriptionHeader?: string | null;
   prescriptionFooter?: string | null; defaultMedicineInstructions?: string | null;
   defaultFollowUpDays?: number | null; voiceInputEnabled: boolean; inkPrescriptionEnabled: boolean;
   whatsappSharingEnabled: boolean; patientNotificationEnabled: boolean; isActive: boolean;

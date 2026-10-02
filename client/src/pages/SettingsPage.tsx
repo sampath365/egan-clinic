@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pill, Plus, Save, ShieldCheck, Stethoscope, Users } from 'lucide-react';
+import { Building2, Pill, Plus, Save, ShieldCheck, Stethoscope, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, ApiError } from '@/lib/api';
 import { humanize } from '@/lib/utils';
@@ -116,6 +116,7 @@ function ClinicProfileForm({ clinic, onSaved }: { clinic: Clinic; onSaved: () =>
     currency: clinic.currency, timezone: clinic.timezone,
   });
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const mutation = useMutation({
     mutationFn: () => api.patch(`/clinics/${clinic.id}`, {
@@ -126,8 +127,40 @@ function ClinicProfileForm({ clinic, onSaved }: { clinic: Clinic; onSaved: () =>
     onError: (e) => toast.error('Could not update profile', e instanceof ApiError ? e.message : undefined),
   });
 
+  async function uploadLogo(file: File) {
+    setUploadingLogo(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      await api.post(`/clinics/${clinic.id}/logo`, form);
+      toast.success('Logo uploaded', 'It will appear on prescription PDFs.');
+      onSaved();
+    } catch (e) {
+      toast.error('Could not upload logo', e instanceof ApiError ? e.message : undefined);
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
   return (
     <div className="card card-pad">
+      <div className="mb-4 flex items-center gap-4 border-b border-ink-100 pb-4">
+        {clinic.logoUrl ? (
+          <img src={`/api/assets/clinic-logo?clinicId=${clinic.id}`} alt="Clinic logo" className="h-14 w-14 rounded-lg border border-ink-200 object-contain" />
+        ) : (
+          <span className="flex h-14 w-14 items-center justify-center rounded-lg bg-ink-100 text-ink-400"><Building2 className="h-6 w-6" /></span>
+        )}
+        <div>
+          <p className="text-sm font-medium text-ink-900">Clinic logo</p>
+          <p className="hint">PNG, JPEG or WebP, up to 3 MB. Shown on prescriptions.</p>
+          <label className="mt-1 inline-flex cursor-pointer items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline">
+            <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" disabled={uploadingLogo}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadLogo(f); }} />
+            {uploadingLogo ? 'Uploading…' : clinic.logoUrl ? 'Replace logo' : 'Upload logo'}
+          </label>
+        </div>
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Clinic name" required><Input value={form.name} onChange={(e) => set('name', e.target.value)} /></Field>
         <Field label="Phone"><Input value={form.phone} onChange={(e) => set('phone', e.target.value)} /></Field>
@@ -150,12 +183,14 @@ function ClinicProfileForm({ clinic, onSaved }: { clinic: Clinic; onSaved: () =>
 function PharmacySection({ clinicId, pharmacies, onChanged }: { clinicId?: string; pharmacies: Pharmacy[]; onChanged: () => void }) {
   const toast = useToast();
   const [addOpen, setAddOpen] = useState(false);
+  const [addExternalOpen, setAddExternalOpen] = useState(false);
+  const [assignFor, setAssignFor] = useState<Pharmacy | null>(null);
   const attached = pharmacies.find((p) => p.type === 'ATTACHED');
 
   const addPharmacy = useMutation({
     mutationFn: (form: { name: string; phone: string; address: string; licenseNo: string; type: string }) =>
       api.post('/pharmacies', { clinicId, ...form, type: form.type }),
-    onSuccess: () => { toast.success('Medical shop added'); onChanged(); setAddOpen(false); },
+    onSuccess: () => { toast.success('Medical shop added'); onChanged(); setAddOpen(false); setAddExternalOpen(false); },
     onError: (e) => toast.error('Could not add medical shop', e instanceof ApiError ? e.message : undefined),
   });
 
@@ -164,11 +199,27 @@ function PharmacySection({ clinicId, pharmacies, onChanged }: { clinicId?: strin
       <div className="card card-pad">
         <h2 className="section-title mb-3">Attached medical shop</h2>
         {attached ? (
-          <div className="space-y-1.5 text-sm">
-            <p className="font-semibold text-ink-900">{attached.name}</p>
-            <p className="text-ink-600">{attached.address ?? '—'}</p>
-            <p className="hint">{attached.phone ?? '—'} · License {attached.licenseNo ?? '—'}</p>
-          </div>
+          <>
+            <div className="space-y-1.5 text-sm">
+              <p className="font-semibold text-ink-900">{attached.name}</p>
+              <p className="text-ink-600">{attached.address ?? '—'}</p>
+              <p className="hint">{attached.phone ?? '—'} · License {attached.licenseNo ?? '—'}</p>
+            </div>
+            <div className="mt-3">
+              <p className="label">Pharmacists</p>
+              {!attached.users?.length ? <p className="hint">No pharmacist accounts assigned yet.</p> : (
+                <ul className="divide-y divide-ink-100">
+                  {attached.users.map((u) => (
+                    <li key={u.id} className="flex items-center justify-between py-2 text-sm">
+                      <span className="text-ink-800">{u.user.fullName}</span>
+                      <span className="hint">{u.user.email} · {humanize(u.role)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <Button size="sm" variant="secondary" className="mt-2" onClick={() => setAssignFor(attached)}>Assign pharmacist</Button>
+            </div>
+          </>
         ) : (
           <>
             <p className="text-sm text-ink-600">No attached medical shop is configured. Add one to forward prescriptions for pharmacist review.</p>
@@ -178,13 +229,16 @@ function PharmacySection({ clinicId, pharmacies, onChanged }: { clinicId?: strin
       </div>
 
       <div className="card card-pad">
-        <h2 className="section-title mb-3">External EGAN pharmacies</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="section-title">External EGAN pharmacies</h2>
+          <Button size="sm" variant="secondary" onClick={() => setAddExternalOpen(true)}><Plus className="h-3.5 w-3.5" /> Add pharmacy</Button>
+        </div>
         <ul className="divide-y divide-ink-100">
           {pharmacies.filter((p) => p.type !== 'ATTACHED').map((p) => (
             <li key={p.id} className="flex items-center justify-between py-2.5 text-sm">
               <div>
                 <p className="font-medium text-ink-800">{p.name}</p>
-                <p className="hint">{p.address ?? '—'}</p>
+                <p className="hint">{p.address ?? '—'}{p.phone ? ` · ${p.phone}` : ''}</p>
               </div>
               {p.isEganParticipating && <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700 ring-1 ring-inset ring-brand-200">EGAN participating</span>}
             </li>
@@ -198,10 +252,71 @@ function PharmacySection({ clinicId, pharmacies, onChanged }: { clinicId?: strin
         footer={<><Button variant="secondary" onClick={() => setAddOpen(false)}>Cancel</Button>
           <Button onClick={() => addPharmacy.mutate({ name: 'EGAN Medical Store', phone: '', address: '', licenseNo: '', type: 'ATTACHED' })} loading={addPharmacy.isPending}>Add medical shop</Button></>}>
         <p className="text-sm text-ink-600">
-          This adds an attached medical shop named “EGAN Medical Store”. You can assign a pharmacist account afterwards from the Staff tab.
+          This adds an attached medical shop named “EGAN Medical Store”. Assign a pharmacist account afterwards.
         </p>
       </Modal>
+
+      {addExternalOpen && <ExternalPharmacyModal onClose={() => setAddExternalOpen(false)} onAdd={(f) => addPharmacy.mutate(f)} loading={addPharmacy.isPending} />}
+      {assignFor && <AssignPharmacistModal pharmacy={assignFor} onClose={() => setAssignFor(null)} onDone={() => { onChanged(); setAssignFor(null); }} />}
     </div>
+  );
+}
+
+function ExternalPharmacyModal({ onClose, onAdd, loading }: { onClose: () => void; onAdd: (f: { name: string; phone: string; address: string; licenseNo: string; type: string }) => void; loading: boolean }) {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [licenseNo, setLicenseNo] = useState('');
+  const [egan, setEgan] = useState(true);
+
+  return (
+    <Modal open onClose={onClose} title="Add external pharmacy" size="md"
+      footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button>
+        <Button onClick={() => onAdd({ name, phone, address, licenseNo, type: egan ? 'EGAN' : 'EXTERNAL' })} loading={loading} disabled={!name.trim()}>Add pharmacy</Button></>}>
+      <div className="space-y-3">
+        <Field label="Pharmacy name" required><Input value={name} onChange={(e) => setName(e.target.value)} /></Field>
+        <Field label="Phone"><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></Field>
+        <Field label="Address"><Input value={address} onChange={(e) => setAddress(e.target.value)} /></Field>
+        <Field label="Drug licence no."><Input value={licenseNo} onChange={(e) => setLicenseNo(e.target.value)} /></Field>
+        <label className="flex items-center gap-2 text-sm text-ink-700">
+          <input type="checkbox" checked={egan} onChange={(e) => setEgan(e.target.checked)} className="h-4 w-4 rounded border-ink-300" />
+          Participating EGAN medical shop
+        </label>
+      </div>
+    </Modal>
+  );
+}
+
+function AssignPharmacistModal({ pharmacy, onClose, onDone }: { pharmacy: Pharmacy; onClose: () => void; onDone: () => void }) {
+  const toast = useToast();
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState('PHARMACIST');
+
+  const mutation = useMutation({
+    mutationFn: () => api.post(`/pharmacies/${pharmacy.id}/users/by-email`, { email, role }),
+    onSuccess: (res) => {
+      toast.success('Pharmacist assigned', `${(res as { fullName?: string }).fullName ?? email} can now review prescriptions.`);
+      onDone();
+    },
+    onError: (e) => toast.error('Could not assign pharmacist', e instanceof ApiError ? e.message : undefined),
+  });
+
+  return (
+    <Modal open onClose={onClose} title={`Assign pharmacist — ${pharmacy.name}`} size="md"
+      footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button>
+        <Button onClick={() => mutation.mutate()} loading={mutation.isPending} disabled={!email.trim()}>Assign</Button></>}>
+      <div className="space-y-3">
+        <Field label="User email" required hint="The person must already have an EGAN Clinic account.">
+          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="pharmacist@example.com" />
+        </Field>
+        <Field label="Pharmacy role">
+          <Select value={role} onChange={(e) => setRole(e.target.value)}>
+            {['PHARMACIST', 'MANAGER', 'STAFF'].map((r) => <option key={r} value={r}>{humanize(r)}</option>)}
+          </Select>
+        </Field>
+        <p className="hint">Pharmacists only see prescriptions explicitly shared with this pharmacy.</p>
+      </div>
+    </Modal>
   );
 }
 

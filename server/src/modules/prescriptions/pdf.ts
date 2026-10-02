@@ -77,12 +77,31 @@ export async function buildPrescriptionPdf(input: PrescriptionPdfInput): Promise
 
   // Header band
   page.drawRectangle({ x: 0, y: height - 96, width, height: 96, color: rgb(0.96, 0.98, 0.98) });
-  text(input.clinic.name, { size: 18, bold: true });
+
+  // Clinic logo (top-left) when one has been uploaded.
+  let headerTextX = margin;
+  if (input.clinic.logoUrl) {
+    try {
+      const { readFileBuffer } = await import('./service.js');
+      const bytes = await readFileBuffer(input.clinic.logoUrl);
+      const ext = input.clinic.logoUrl.split('.').pop()?.toLowerCase();
+      const image = ext === 'png' ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
+      const maxH = 52;
+      const scale = Math.min(maxH / image.height, 1);
+      const w = image.width * scale;
+      page.drawImage(image, { x: margin, y: height - 74, width: w, height: image.height * scale });
+      headerTextX = margin + w + 12;
+    } catch {
+      // A missing logo must never break PDF generation.
+    }
+  }
+
+  text(input.clinic.name, { size: 18, bold: true, x: headerTextX });
   y -= 18;
   const clinicMeta = [input.clinic.address, input.clinic.phone, input.clinic.email].filter(Boolean).join('  •  ');
-  if (clinicMeta) { text(clinicMeta, { size: 9, color: MUTED }); y -= 14; }
+  if (clinicMeta) { text(clinicMeta, { size: 9, color: MUTED, x: headerTextX }); y -= 14; }
   if (input.doctor.prescriptionHeader) {
-    for (const l of wrap(input.doctor.prescriptionHeader, 95)) { text(l, { size: 9, color: MUTED }); y -= 12; }
+    for (const l of wrap(input.doctor.prescriptionHeader, 95)) { text(l, { size: 9, color: MUTED, x: headerTextX }); y -= 12; }
   }
   y = height - 118;
 
@@ -173,6 +192,28 @@ export async function buildPrescriptionPdf(input: PrescriptionPdfInput): Promise
   // Signature + QR verification
   const sigY = Math.max(y, 150);
   page.drawLine({ start: { x: margin, y: sigY + 34 }, end: { x: margin + 190, y: sigY + 34 }, thickness: 0.8, color: LINE });
+
+  // Embed the doctor's uploaded signature image above the line when present.
+  if (input.doctor.signatureUrl) {
+    try {
+      const { readFileBuffer } = await import('./service.js');
+      const bytes = await readFileBuffer(input.doctor.signatureUrl);
+      const ext = input.doctor.signatureUrl.split('.').pop()?.toLowerCase();
+      const image = ext === 'png' ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
+      const maxW = 140;
+      const maxH = 42;
+      const scale = Math.min(maxW / image.width, maxH / image.height, 1);
+      page.drawImage(image, {
+        x: margin + 6,
+        y: sigY + 36,
+        width: image.width * scale,
+        height: image.height * scale,
+      });
+    } catch {
+      // A missing or unreadable signature must never break PDF generation.
+    }
+  }
+
   page.drawText(`Dr. ${input.doctor.name}`, { x: margin, y: sigY + 22, size: 9.5, font: bold, color: INK });
   page.drawText('Digital signature', { x: margin, y: sigY + 10, size: 8.5, font, color: MUTED });
 

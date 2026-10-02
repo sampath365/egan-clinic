@@ -128,6 +128,40 @@ export async function pharmacyRoutes(app: FastifyInstance) {
     return reply.code(201).send({ success: true });
   });
 
+  // Assign a pharmacist by email (resolves the account server-side).
+  app.post('/:id/users/by-email', { preHandler: [app.authenticate, requirePermission(PERMISSIONS.PHARMACY_MANAGE)] }, async (req, reply) => {
+    const { id } = parseParams(req, idParamSchema);
+    const pharmacy = await prisma.pharmacy.findUnique({ where: { id } });
+    if (!pharmacy) throw AppError.notFound('Pharmacy not found');
+    if (pharmacy.clinicId) assertClinicAccess(req.auth, pharmacy.clinicId);
+
+    const body = parseBody(req, z.object({
+      email: z.string().email(),
+      role: z.enum(['PHARMACIST', 'MANAGER', 'STAFF']).default('PHARMACIST'),
+    }));
+    const user = await prisma.user.findUnique({ where: { email: body.email.toLowerCase() } });
+    if (!user) throw AppError.notFound('No EGAN Clinic account exists for that email');
+    if (!user.isActive) throw AppError.badRequest('That account is not active');
+
+    await prisma.pharmacyUser.upsert({
+      where: { pharmacyId_userId: { pharmacyId: id, userId: user.id } },
+      create: { pharmacyId: id, userId: user.id, role: body.role },
+      update: { role: body.role, isActive: true },
+    });
+    const role = await prisma.role.upsert({ where: { name: 'PHARMACIST' }, create: { name: 'PHARMACIST', isSystem: true }, update: {} });
+    await prisma.userRole.upsert({
+      where: { userId_roleId: { userId: user.id, roleId: role.id } },
+      create: { userId: user.id, roleId: role.id },
+      update: {},
+    });
+    await recordAudit({
+      action: AUDIT_ACTION.USER_PERMISSION_CHANGED, entityType: 'PharmacyUser', entityId: user.id,
+      clinicId: pharmacy.clinicId ?? undefined, userId: req.auth!.userId,
+      metadata: { pharmacyId: id, role: body.role }, req,
+    });
+    return reply.code(201).send({ success: true, userId: user.id, fullName: user.fullName });
+  });
+
   // Pharmacy view of prescriptions shared with it.
   app.get('/:id/prescriptions', { preHandler: [app.authenticate, requirePermission(PERMISSIONS.PHARMACY_PRESCRIPTION_VIEW)] }, async (req, reply) => {
     const { id } = parseParams(req, idParamSchema);

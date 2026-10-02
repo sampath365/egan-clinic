@@ -196,6 +196,44 @@ export async function reportRoutes(app: FastifyInstance) {
     return reply.send({ enabled: true, items: rows });
   });
 
+  app.get('/consultations', { preHandler: [app.authenticate, requirePermission(PERMISSIONS.REPORT_VIEW)] }, async (req, reply) => {
+    const q = parseQuery(req, z.object({ clinicId: z.string().optional(), from: z.string().optional(), to: z.string().optional(), doctorId: z.string().optional() }));
+    const clinicId = q.clinicId ?? (await getClinicIdForRequest(req));
+    assertClinicAccess(req.auth, clinicId);
+    const { fromDate, toDate } = resolveRange(q.from, q.to);
+
+    const where = { clinicId, startedAt: { gte: fromDate, lte: toDate }, ...(q.doctorId ? { doctorId: q.doctorId } : {}) };
+    const [byStatus, total, withDiagnosis, completed] = await Promise.all([
+      prisma.consultation.groupBy({ by: ['status'], where, _count: true }),
+      prisma.consultation.count({ where }),
+      prisma.consultation.count({ where: { ...where, diagnosis: { not: null } } }),
+      prisma.consultation.count({ where: { ...where, status: 'COMPLETED' } }),
+    ]);
+    return reply.send({
+      range: { from: fromDate, to: toDate },
+      total,
+      completed,
+      withDiagnosis,
+      byStatus: byStatus.map((s) => ({ status: s.status, count: s._count })),
+    });
+  });
+
+  app.get('/outstanding-payments', { preHandler: [app.authenticate, requirePermission(PERMISSIONS.REPORT_VIEW)] }, async (req, reply) => {
+    const q = parseQuery(req, z.object({ clinicId: z.string().optional() }));
+    const clinicId = q.clinicId ?? (await getClinicIdForRequest(req));
+    assertClinicAccess(req.auth, clinicId);
+    const items = await prisma.invoice.findMany({
+      where: { clinicId, status: { in: [INVOICE_STATUS.UNPAID, INVOICE_STATUS.PARTIALLY_PAID] } },
+      include: { patient: { select: { id: true, name: true, patientCode: true, mobile: true } } },
+      orderBy: { createdAt: 'asc' },
+    });
+    return reply.send({
+      items,
+      total: items.reduce((sum, i) => sum + i.balance, 0),
+      count: items.length,
+    });
+  });
+
   app.get('/cancelled-appointments', { preHandler: [app.authenticate, requirePermission(PERMISSIONS.REPORT_VIEW)] }, async (req, reply) => {
     const q = parseQuery(req, z.object({ clinicId: z.string().optional(), from: z.string().optional(), to: z.string().optional() }));
     const clinicId = q.clinicId ?? (await getClinicIdForRequest(req));

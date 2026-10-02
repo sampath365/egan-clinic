@@ -14,6 +14,7 @@ import { documentRoutes } from './documents/routes.js';
 import { notificationRoutes } from './notifications/routes.js';
 import { reportRoutes } from './reports/routes.js';
 import { auditRoutes } from './audit/routes.js';
+import { assetRoutes } from './assets/routes.js';
 
 /**
  * Module registry. Each domain module owns its routes and is registered under a
@@ -36,4 +37,5 @@ export async function registerModules(app: FastifyInstance) {
   await app.register(notificationRoutes, { prefix: '/notifications' });
   await app.register(reportRoutes, { prefix: '/reports' });
   await app.register(auditRoutes, { prefix: '/audit' });
+  await app.register(assetRoutes, { prefix: '/assets' });
 }

@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/AppLayout';
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import { LoginPage } from '@/pages/LoginPage';
+import { RegisterPage } from '@/pages/RegisterPage';
 import { VerifyPage } from '@/pages/VerifyPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { AppointmentsPage } from '@/pages/AppointmentsPage';
@@ -32,6 +33,8 @@ import { PatientVisitsPage } from '@/pages/patient/PatientVisitsPage';
 import { PatientDocumentsPage } from '@/pages/patient/PatientDocumentsPage';
 import { PatientPaymentsPage } from '@/pages/patient/PatientPaymentsPage';
 import { PatientProfilePage } from '@/pages/patient/PatientProfilePage';
+import { PatientQueuePage } from '@/pages/patient/PatientQueuePage';
+import { NotificationPreferencesPage } from '@/pages/NotificationPreferencesPage';
 import { PermissionGate } from '@/components/PermissionGate';
 import { PERMISSIONS } from '@/lib/permissions';
 
@@ -47,6 +50,7 @@ export function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify/:prescriptionNo" element={<VerifyPage />} />
 
       <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
@@ -75,6 +79,8 @@ export function App() {
         <Route path="me/appointments" element={<PatientAppointmentsPage />} />
         <Route path="me/visits" element={<PatientVisitsPage />} />
         <Route path="me/prescriptions" element={<PatientPrescriptionsPage />} />
+        <Route path="me/queue" element={<PatientQueuePage />} />
+        <Route path="me/notifications" element={<NotificationPreferencesPage />} />
         <Route path="me/documents" element={<PatientDocumentsPage />} />
         <Route path="me/payments" element={<PatientPaymentsPage />} />
         <Route path="me/profile" element={<PatientProfilePage />} />

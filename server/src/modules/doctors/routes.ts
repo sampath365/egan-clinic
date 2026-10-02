@@ -6,6 +6,7 @@ import { parseBody, parseParams, parseQuery, idParamSchema } from '../../shared/
 import { PERMISSIONS, ROLES } from '../../shared/permissions.js';
 import { requirePermission } from '../../plugins/auth.js';
 import { assertClinicAccess, assertDoctorAccess, getClinicIdForRequest } from '../../shared/access.js';
+import { writeFileBuffer } from '../prescriptions/service.js';
 
 const timingsSchema = z.array(z.object({
   day: z.string().min(2).max(10),
@@ -97,6 +98,35 @@ export async function doctorRoutes(app: FastifyInstance) {
     if (body.timings) data.timings = JSON.stringify(body.timings);
     const doctor = await prisma.doctor.update({ where: { id }, data: data as never });
     return reply.send({ doctor });
+  });
+
+  // --- Digital signature & stamp ---
+  // Stored under the doctor's own folder and served through a public route so
+  // the browser and the PDF generator can both fetch them.
+  app.post('/:id/signature', { preHandler: [app.authenticate, requirePermission(PERMISSIONS.DOCTOR_MANAGE)] }, async (req, reply) => {
+    const { id } = parseParams(req, idParamSchema);
+    await assertDoctorAccess(req.auth, id);
+    const doctor = await prisma.doctor.findUnique({ where: { id } });
+    if (!doctor) throw AppError.notFound('Doctor not found');
+
+    const data = await req.file();
+    if (!data) throw AppError.badRequest('No file was uploaded');
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(data.mimetype)) {
+      throw AppError.badRequest('Signature and stamp must be a PNG, JPEG or WebP image');
+    }
+    const buffer = await data.toBuffer();
+    if (buffer.length > 5 * 1024 * 1024) throw AppError.badRequest('Image exceeds the 5 MB limit');
+
+    const kind = data.fields?.kind && String((data.fields.kind as { value?: string }).value) === 'stamp' ? 'stamp' : 'signature';
+    const ext = data.mimetype === 'image/png' ? 'png' : data.mimetype === 'image/webp' ? 'webp' : 'jpg';
+    const relPath = `doctors/${id}/${kind}-${Date.now()}.${ext}`;
+    await writeFileBuffer(relPath, buffer);
+
+    const doctorUpdated = await prisma.doctor.update({
+      where: { id },
+      data: kind === 'stamp' ? { digitalStampUrl: relPath } : { digitalSignatureUrl: relPath },
+    });
+    return reply.code(201).send({ kind, path: relPath, doctor: doctorUpdated });
   });
 
   // --- Leave management ---
