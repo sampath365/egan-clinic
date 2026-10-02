@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Pill, Settings } from 'lucide-react';
-import { Link } from 'react-router-dom';
+
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { formatDateTime } from '@/lib/utils';
@@ -11,6 +11,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { usePermissions } from '@/hooks/usePermissions';
 import { PERMISSIONS } from '@/lib/permissions';
 import type { PharmacyPrescription } from '@/types';
+import { LinkButton } from '@/components/ui/Button';
 
 export function PharmacyPage() {
   const { activeClinic, hasRole } = useAuth();
@@ -41,7 +42,7 @@ export function PharmacyPage() {
           icon={<Settings className="h-5 w-5" />}
           title="The medical shop module is disabled"
           message="Enable it in Settings to attach a medical shop and send prescriptions to a pharmacy."
-          action={<Link to="/settings" className="text-sm font-medium text-brand-700 hover:underline">Open settings</Link>}
+          action={<LinkButton to="/settings" tone="brand">Open settings</LinkButton>}
         />
       </div>
     );

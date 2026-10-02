@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { LinkButton } from '@/components/ui/Button';
 import { ShieldAlert } from 'lucide-react';
 
 export function ForbiddenPage() {
@@ -12,7 +12,7 @@ export function ForbiddenPage() {
         <p className="mt-1 text-sm text-ink-500">
           Your role does not include permission for this area. If you believe this is an error, contact your clinic owner.
         </p>
-        <Link to="/" className="mt-4 inline-block text-sm font-medium text-brand-700 hover:underline">Return to dashboard</Link>
+        <LinkButton to="/" tone="brand" className="mt-4">Return to dashboard</LinkButton>
       </div>
     </div>
   );

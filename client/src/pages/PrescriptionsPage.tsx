@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ClipboardList } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,6 +12,7 @@ import { Select } from '@/components/ui/Field';
 import { usePermissions } from '@/hooks/usePermissions';
 import { PERMISSIONS } from '@/lib/permissions';
 import type { Paginated, Prescription } from '@/types';
+import { LinkButton } from '@/components/ui/Button';
 
 export function PrescriptionsPage() {
   const { activeClinic } = useAuth();
@@ -41,9 +42,9 @@ export function PrescriptionsPage() {
       render: (p) => (
         <div className="flex justify-end gap-2">
           {can(PERMISSIONS.PRESCRIPTION_CREATE) && (p.status === 'DRAFT' || p.status === 'REVIEW') && (
-            <Link to={`/prescriptions/${p.id}/edit`} className="text-sm font-medium text-brand-700 hover:underline">Edit</Link>
+            <LinkButton to={`/prescriptions/${p.id}/edit`} tone="brand">Edit</LinkButton>
           )}
-          <Link to={`/prescriptions/${p.id}`} className="text-sm font-medium text-ink-700 hover:underline">View</Link>
+          <LinkButton to={`/prescriptions/${p.id}`} tone="muted">View</LinkButton>
         </div>
       ),
     },

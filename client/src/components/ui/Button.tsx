@@ -1,4 +1,5 @@
-import { forwardRef, type ButtonHTMLAttributes } from 'react';
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'outline';
@@ -13,11 +14,19 @@ const variants: Record<Variant, string> = {
   success: 'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 disabled:bg-emerald-300',
 };
 
+// Inline text links need a touch target, but must not grow the line height.
+// `py-2 -my-2` expands the hit area vertically while staying visually inline.
+const linkVariants: Record<'brand' | 'muted', string> = {
+  brand: 'text-brand-700 hover:underline',
+  muted: 'text-ink-700 hover:underline',
+};
+
 const sizes: Record<Size, string> = {
-  sm: 'h-8 px-3 text-sm gap-1.5',
-  md: 'h-10 px-4 text-sm gap-2',
+  // Touch-friendly minimums: nothing below 36px tall, primary actions 44px+.
+  sm: 'h-9 px-3 text-sm gap-1.5',
+  md: 'h-11 px-4 text-sm gap-2',
   lg: 'h-12 px-5 text-base gap-2',
-  icon: 'h-10 w-10 justify-center',
+  icon: 'h-11 w-11 justify-center',
 };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -49,3 +58,33 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     </button>
   );
 });
+
+export interface LinkButtonProps {
+  to: string;
+  children: ReactNode;
+  /** `brand` for primary links, `muted` for secondary ones. */
+  tone?: 'brand' | 'muted';
+  className?: string;
+  title?: string;
+  'aria-label'?: string;
+}
+
+/**
+ * An inline text link with a comfortable touch target. Keeps the visual size of
+ * a text link while expanding the tappable area to ~36px on small screens.
+ */
+export function LinkButton({ to, children, tone = 'brand', className, ...rest }: LinkButtonProps) {
+  return (
+    <Link
+      to={to}
+      className={cn(
+        'inline-flex items-center py-2.5 -my-2.5 text-sm font-medium sm:py-0 sm:my-0',
+        linkVariants[tone],
+        className,
+      )}
+      {...rest}
+    >
+      {children}
+    </Link>
+  );
+}

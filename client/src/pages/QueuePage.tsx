@@ -120,7 +120,7 @@ export function QueuePage() {
                             </Button>
                           )}
                           {['WAITING', 'SKIPPED', 'RECALLED'].includes(t.status) && (
-                            <Button size="sm" variant="ghost" onClick={() => act.mutate({ id: t.id, action: 'cancel' })} title="Cancel token">
+                            <Button size="sm" variant="ghost" onClick={() => act.mutate({ id: t.id, action: 'cancel' })} title="Cancel token" aria-label={`Cancel token ${t.tokenNumber}`}>
                               <XCircle className="h-3.5 w-3.5 text-ink-400" />
                             </Button>
                           )}

@@ -67,22 +67,35 @@ export function DataTable<T>({ columns, rows, rowKey, onRowClick, empty, loading
 
       {/* Mobile stacked cards */}
       <div className="space-y-2 md:hidden">
-        {rows.map((row) => (
-          <div
-            key={rowKey(row)}
-            onClick={onRowClick ? () => onRowClick(row) : undefined}
-            className={cn('card card-pad', onRowClick && 'cursor-pointer active:bg-ink-50')}
-          >
-            <dl className="space-y-1.5">
-              {columns.map((c) => (
-                <div key={c.key} className="flex items-start justify-between gap-3">
-                  <dt className="text-xs font-medium uppercase tracking-wide text-ink-400">{c.header}</dt>
-                  <dd className="text-right text-sm text-ink-800">{c.render(row)}</dd>
+        {rows.map((row) => {
+          const isAction = (c: Column<T>) => !c.header && c.align === 'right';
+          const detailCols = columns.filter((c) => !isAction(c));
+          const actionCols = columns.filter(isAction);
+          return (
+            <div
+              key={rowKey(row)}
+              onClick={onRowClick ? () => onRowClick(row) : undefined}
+              className={cn('card card-pad', onRowClick && 'cursor-pointer active:bg-ink-50')}
+            >
+              <dl className="space-y-2">
+                {detailCols.map((c) => (
+                  <div key={c.key} className="flex items-start justify-between gap-3">
+                    <dt className="shrink-0 text-xs font-medium uppercase tracking-wide text-ink-400">{c.header}</dt>
+                    <dd className="min-w-0 text-right text-sm text-ink-800">{c.render(row)}</dd>
+                  </div>
+                ))}
+              </dl>
+              {actionCols.length > 0 && (
+                <div
+                  className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-ink-100 pt-3"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {actionCols.map((c) => <div key={c.key}>{c.render(row)}</div>)}
                 </div>
-              ))}
-            </dl>
-          </div>
-        ))}
+              )}
+            </div>
+          );
+        })}
       </div>
     </>
   );

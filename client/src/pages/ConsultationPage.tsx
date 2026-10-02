@@ -9,7 +9,7 @@ import { api, ApiError } from '@/lib/api';
 import { ageFromDob, formatDateTime, humanize } from '@/lib/utils';
 import { Avatar, EmptyState, PageHeader, Tabs } from '@/components/ui/Layout';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { Button } from '@/components/ui/Button';
+import { Button, LinkButton } from '@/components/ui/Button';
 import { Field, Input, Textarea, Select } from '@/components/ui/Field';
 import { InlineSpinner } from '@/components/ui/Spinner';
 import { useToast } from '@/components/ui/Toast';
@@ -44,7 +44,7 @@ export function ConsultationPage() {
 
   return (
     <div>
-      <button onClick={() => navigate(-1)} className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-ink-600 hover:text-ink-900">
+      <button onClick={() => navigate(-1)} className="mb-3 -my-1 inline-flex items-center gap-1.5 py-2 text-sm font-medium text-ink-600 hover:text-ink-900 sm:my-0 sm:py-0">
         <ArrowLeft className="h-4 w-4" /> Back
       </button>
 
@@ -99,7 +99,7 @@ export function ConsultationPage() {
               <ul className="divide-y divide-ink-100">
                 {history.prescriptions.map((p) => (
                   <li key={p.id} className="flex items-center justify-between gap-2 py-2.5">
-                    <Link to={`/prescriptions/${p.id}`} className="text-sm font-medium text-brand-700 hover:underline">{p.prescriptionNo}</Link>
+                    <LinkButton to={`/prescriptions/${p.id}`} tone="brand">{p.prescriptionNo}</LinkButton>
                     <span className="hint">{formatDateTime(p.issuedAt ?? p.createdAt)}</span>
                     <StatusBadge status={p.status} />
                   </li>

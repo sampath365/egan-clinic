@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+
 import { useQuery } from '@tanstack/react-query';
 import { Stethoscope } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,6 +8,7 @@ import { PageHeader, EmptyState } from '@/components/ui/Layout';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import type { Consultation } from '@/types';
+import { LinkButton } from '@/components/ui/Button';
 
 export function ConsultationsPage() {
   const { activeClinic } = useAuth();
@@ -35,7 +36,7 @@ export function ConsultationsPage() {
     { key: 'status', header: 'Status', render: (c) => <StatusBadge status={c.status} /> },
     {
       key: 'open', header: '', align: 'right',
-      render: (c) => <Link to={`/consultations/${c.id}`} className="text-sm font-medium text-brand-700 hover:underline">Open</Link>,
+      render: (c) => <LinkButton to={`/consultations/${c.id}`} tone="brand">Open</LinkButton>,
     },
   ];
 

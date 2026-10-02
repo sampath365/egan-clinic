@@ -64,7 +64,7 @@ export function NotificationPreferencesPage() {
                   aria-checked={prefs[c.key]}
                   aria-label={c.label}
                   onClick={() => setPrefs({ ...prefs, [c.key]: !prefs[c.key] })}
-                  className={`relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${prefs[c.key] ? 'bg-brand-600' : 'bg-ink-300'}`}
+                  className={`relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors before:absolute before:-inset-x-3 before:-inset-y-3 before:content-[''] ${prefs[c.key] ? 'bg-brand-600' : 'bg-ink-300'}`}
                 >
                   <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${prefs[c.key] ? 'translate-x-6' : 'translate-x-1'}`} />
                 </button>
@@ -78,7 +78,7 @@ export function NotificationPreferencesPage() {
           <ul className="space-y-2">
             {CHANNELS.map((ch) => (
               <li key={ch}>
-                <label className="flex items-center gap-3 rounded-lg border border-ink-200 px-3 py-2.5 text-sm hover:bg-ink-50">
+                <label className="flex items-center gap-3 rounded-lg border border-ink-200 px-3 py-3 text-sm hover:bg-ink-50">
                   <input
                     type="checkbox"
                     checked={prefs.channels.includes(ch)}
@@ -88,7 +88,7 @@ export function NotificationPreferencesPage() {
                         : prefs.channels.filter((x) => x !== ch);
                       setPrefs({ ...prefs, channels: next });
                     }}
-                    className="h-4 w-4 rounded border-ink-300"
+                    className="h-5 w-5 shrink-0 rounded border-ink-300"
                   />
                   <span className="font-medium text-ink-800">{humanize(ch)}</span>
                   {ch !== 'IN_APP' && <span className="hint ml-auto">Only if configured by your clinic</span>}

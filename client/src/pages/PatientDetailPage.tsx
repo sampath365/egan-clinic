@@ -7,7 +7,7 @@ import { api, ApiError } from '@/lib/api';
 import { ageFromDob, formatDate, formatDateTime, humanize } from '@/lib/utils';
 import { Avatar, EmptyState, PageHeader, Tabs } from '@/components/ui/Layout';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { Button } from '@/components/ui/Button';
+import { Button, LinkButton } from '@/components/ui/Button';
 import { InlineSpinner } from '@/components/ui/Spinner';
 import { Modal } from '@/components/ui/Modal';
 import { Field, Input, Select } from '@/components/ui/Field';
@@ -68,7 +68,7 @@ export function PatientDetailPage() {
 
   return (
     <div>
-      <button onClick={() => navigate('/patients')} className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-ink-600 hover:text-ink-900">
+      <button onClick={() => navigate('/patients')} className="mb-3 -my-1 inline-flex items-center gap-1.5 py-2 text-sm font-medium text-ink-600 hover:text-ink-900 sm:my-0 sm:py-0">
         <ArrowLeft className="h-4 w-4" /> All patients
       </button>
 
@@ -209,7 +209,7 @@ export function PatientDetailPage() {
               <ul className="divide-y divide-ink-100">
                 {patient.asPrimary.map((f) => (
                   <li key={f.id} className="flex items-center justify-between py-2.5">
-                    <Link to={`/patients/${f.member.id}`} className="text-sm font-medium text-brand-700 hover:underline">{f.member.name}</Link>
+                    <LinkButton to={`/patients/${f.member.id}`} tone="brand">{f.member.name}</LinkButton>
                     <span className="hint">{humanize(f.relation)} · records {f.canViewRecords ? 'shared' : 'private'}</span>
                   </li>
                 ))}
@@ -222,7 +222,7 @@ export function PatientDetailPage() {
               <ul className="divide-y divide-ink-100">
                 {patient.asMember.map((f) => (
                   <li key={f.id} className="flex items-center justify-between py-2.5">
-                    <Link to={`/patients/${f.primary.id}`} className="text-sm font-medium text-brand-700 hover:underline">{f.primary.name}</Link>
+                    <LinkButton to={`/patients/${f.primary.id}`} tone="brand">{f.primary.name}</LinkButton>
                     <span className="hint">{humanize(f.relation)}</span>
                   </li>
                 ))}

@@ -8,6 +8,7 @@ import { PageHeader, StatCard, EmptyState } from '@/components/ui/Layout';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { InlineSpinner } from '@/components/ui/Spinner';
 import type { DashboardData, QueueToken } from '@/types';
+import { LinkButton } from '@/components/ui/Button';
 
 export function DashboardPage() {
   const { user, activeClinic } = useAuth();
@@ -79,7 +80,7 @@ export function DashboardPage() {
         <section className="lg:col-span-1">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="section-title">Now waiting</h2>
-            <Link to="/queue" className="text-xs font-medium text-brand-700 hover:underline">View queue</Link>
+            <LinkButton to="/queue" tone="brand" className="text-xs">View queue</LinkButton>
           </div>
           {waiting.length === 0 ? (
             <EmptyState icon={<ListOrdered className="h-5 w-5" />} title="No one is waiting" message="New tokens will appear here as patients check in." />
@@ -105,7 +106,7 @@ export function DashboardPage() {
         <section className="lg:col-span-1">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="section-title">Recent prescriptions</h2>
-            <Link to="/prescriptions" className="text-xs font-medium text-brand-700 hover:underline">View all</Link>
+            <LinkButton to="/prescriptions" tone="brand" className="text-xs">View all</LinkButton>
           </div>
           {data.recentPrescriptions.length === 0 ? (
             <EmptyState icon={<ClipboardList className="h-5 w-5" />} title="No prescriptions yet" />
@@ -131,7 +132,7 @@ export function DashboardPage() {
           <div>
             <div className="mb-2 flex items-center justify-between">
               <h2 className="section-title">Recent patients</h2>
-              <Link to="/patients" className="text-xs font-medium text-brand-700 hover:underline">View all</Link>
+              <LinkButton to="/patients" tone="brand" className="text-xs">View all</LinkButton>
             </div>
             {data.recentPatients.length === 0 ? (
               <EmptyState icon={<Users className="h-5 w-5" />} title="No patients yet" />

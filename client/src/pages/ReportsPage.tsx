@@ -54,10 +54,10 @@ export function ReportsPage() {
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <section className="card card-pad">
+        <section className="card card-pad min-w-0">
           <h2 className="section-title mb-3">New patients</h2>
           {!patients?.series.length ? <p className="text-sm text-ink-500">No patient registrations in this range.</p> : (
-            <div className="h-64">
+            <div className="h-64 w-full min-w-0 overflow-hidden">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={patients.series}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#eceef2" />
@@ -71,10 +71,10 @@ export function ReportsPage() {
           )}
         </section>
 
-        <section className="card card-pad">
+        <section className="card card-pad min-w-0">
           <h2 className="section-title mb-3">Appointments by status</h2>
           {!appointments?.byStatus.length ? <p className="text-sm text-ink-500">No appointments in this range.</p> : (
-            <div className="h-64">
+            <div className="h-64 w-full min-w-0 overflow-hidden">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={appointments.byStatus.map((s) => ({ name: humanize(s.status), value: s.count }))} dataKey="value" nameKey="name" outerRadius={90} label>
@@ -88,7 +88,7 @@ export function ReportsPage() {
           )}
         </section>
 
-        <section className="card card-pad">
+        <section className="card card-pad min-w-0">
           <h2 className="section-title mb-3">Revenue by method</h2>
           {!revenue?.byMethod.length ? <p className="text-sm text-ink-500">No payments in this range.</p> : (
             <ul className="divide-y divide-ink-100">
@@ -102,7 +102,7 @@ export function ReportsPage() {
           )}
         </section>
 
-        <section className="card card-pad">
+        <section className="card card-pad min-w-0">
           <h2 className="section-title mb-3">Prescriptions</h2>
           <p className="text-sm text-ink-600">Total issued in range: <span className="font-semibold text-ink-900">{prescriptions?.total ?? 0}</span></p>
           {prescriptions?.byStatus.length ? (
@@ -167,7 +167,7 @@ export function ReportsPage() {
           )}
         </section>
 
-        <section className="card card-pad">
+        <section className="card card-pad min-w-0">
           <h2 className="section-title mb-3">Consultation report</h2>
           <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
             <div><p className="hint">Total</p><p className="text-lg font-semibold text-ink-900">{consultations?.total ?? 0}</p></div>
@@ -176,7 +176,7 @@ export function ReportsPage() {
           </div>
         </section>
 
-        <section className="card card-pad">
+        <section className="card card-pad min-w-0">
           <h2 className="section-title mb-3">Outstanding payments</h2>
           <p className="text-sm text-ink-600">Total due: <span className="font-semibold text-ink-900">{formatCurrency(outstanding?.total ?? 0, currency)}</span> across {outstanding?.count ?? 0} invoice(s).</p>
           {outstanding?.items.length ? (

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { LinkButton } from '@/components/ui/Button';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Activity, BellRing, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -68,7 +68,7 @@ export function FollowUpsPage() {
           {data.followUps.map((f) => (
             <li key={f.id} className="card flex flex-wrap items-center justify-between gap-3 p-4">
               <div>
-                <Link to={`/patients/${f.patientId}`} className="text-sm font-semibold text-ink-900 hover:text-brand-700">{f.patient?.name}</Link>
+                <LinkButton to={`/patients/${f.patientId}`} tone="brand" className="text-ink-900">{f.patient?.name}</LinkButton>
                 <p className="hint">{f.patient?.patientCode} · Dr. {f.doctor?.name} · due {formatDate(f.dueDate)}</p>
                 {f.instructions && <p className="mt-0.5 text-sm text-ink-600">{f.instructions}</p>}
               </div>

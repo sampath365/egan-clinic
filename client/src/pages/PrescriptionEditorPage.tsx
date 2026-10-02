@@ -126,7 +126,7 @@ export function PrescriptionEditorPage() {
   if (!editableVersion) {
     return (
       <div>
-        <button onClick={() => navigate(`/prescriptions/${id}`)} className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-ink-600 hover:text-ink-900">
+        <button onClick={() => navigate(`/prescriptions/${id}`)} className="mb-3 -my-1 inline-flex items-center gap-1.5 py-2 text-sm font-medium text-ink-600 hover:text-ink-900 sm:my-0 sm:py-0">
           <ArrowLeft className="h-4 w-4" /> Back to prescription
         </button>
         <div className="card card-pad">
@@ -147,7 +147,7 @@ export function PrescriptionEditorPage() {
 
   return (
     <div className="pb-24">
-      <button onClick={() => navigate(`/prescriptions/${id}`)} className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-ink-600 hover:text-ink-900">
+      <button onClick={() => navigate(`/prescriptions/${id}`)} className="mb-3 -my-1 inline-flex items-center gap-1.5 py-2 text-sm font-medium text-ink-600 hover:text-ink-900 sm:my-0 sm:py-0">
         <ArrowLeft className="h-4 w-4" /> Back
       </button>
 

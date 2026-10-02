@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Activity, BarChart3, Bell, CalendarDays, ChevronDown, ClipboardList,
@@ -61,6 +61,19 @@ export function AppLayout() {
   // The prescription editor has its own bottom action bar, so hide the tab bar
   // there to avoid stacking two fixed bars.
   const hideMobileTabs = /^\/prescriptions\/[^/]+\/edit$/.test(pathname);
+
+  // Close the drawer on Escape, and stop the page behind it from scrolling.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMobileOpen(false); };
+    window.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [mobileOpen]);
 
   async function handleLogout() {
     await logout();
@@ -127,18 +140,18 @@ export function AppLayout() {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-ink-200 bg-white/95 px-4 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-ink-200 bg-white/95 px-3 backdrop-blur sm:gap-3 sm:px-6">
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Open menu">
             <Menu className="h-5 w-5" />
           </Button>
 
           {!patientOnly && clinics.length > 0 && (
-            <div className="relative">
+            <div className="relative min-w-0">
               <select
                 value={activeClinic?.id ?? ''}
                 onChange={(e) => setActiveClinicId(e.target.value)}
                 aria-label="Active clinic"
-                className="max-w-[10rem] appearance-none rounded-lg border border-ink-300 bg-white py-2 pl-3 pr-8 text-sm font-medium text-ink-800 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 sm:max-w-none"
+                className="w-full max-w-[9rem] appearance-none truncate rounded-lg border border-ink-300 bg-white py-2 pl-3 pr-8 text-sm font-medium text-ink-800 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 sm:max-w-none"
               >
                 {clinics.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>

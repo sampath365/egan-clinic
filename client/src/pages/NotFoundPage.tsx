@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { LinkButton } from '@/components/ui/Button';
 import { FileQuestion } from 'lucide-react';
 
 export function NotFoundPage() {
@@ -10,7 +10,7 @@ export function NotFoundPage() {
         </div>
         <h1 className="text-lg font-semibold text-ink-900">Page not found</h1>
         <p className="mt-1 text-sm text-ink-500">The page you are looking for does not exist or has been moved.</p>
-        <Link to="/" className="mt-4 inline-block text-sm font-medium text-brand-700 hover:underline">Return to dashboard</Link>
+        <LinkButton to="/" tone="brand" className="mt-4">Return to dashboard</LinkButton>
       </div>
     </div>
   );
