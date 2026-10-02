@@ -82,3 +82,24 @@ so consent-related tests must clear prior grants to stay deterministic.
 - Vite dev server needs `server.allowedHosts` for the hosted runtime proxy.
 - The generated Prisma client lives in the root `node_modules`.
 - `npm run db:push` must run before the server or tests will fail.
+
+## Mobile / responsive conventions
+
+The app is mobile-first; verify changes at 375px and 390px, not just desktop.
+
+- The sidebar is desktop-only (`lg:block`). On phones it collapses into a drawer
+  opened from the header hamburger.
+- `AppLayout` renders a **bottom tab bar** (`nav[aria-label="Primary"]`) for the
+  primary destinations. A nav item appears there only when flagged
+  `mobile: true` in `NAV` / `PATIENT_NAV`; everything else is reachable through
+  the drawer's **More** button. Keep this list to about four items so tabs do
+  not crowd.
+- The tab bar is hidden on the prescription editor (`/prescriptions/:id/edit`)
+  because that route has its own fixed bottom action bar. If you add another
+  fixed bottom bar, extend `hideMobileTabs` in `AppLayout`.
+- `main` carries bottom padding (`pb-24 lg:pb-6`) so the fixed bar never covers
+  content. Preserve this when changing layout padding.
+- `DataTable` renders a real table on `md+` and stacked cards below `md`; do not
+  add horizontal-scrolling tables for primary list screens.
+- Respect safe areas (`pb-[env(safe-area-inset-bottom)]`) for anything fixed to
+  the bottom.
